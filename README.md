@@ -3,6 +3,8 @@
 > **Hackathon Problem Statement:** "Kannada in Everyday Life: Develop a technology solution that helps people learn and use Kannada in real-world situations such as travelling, shopping, education, healthcare, transportation, and workplaces."
 >
 > **Project Tagline:** *Learn Kannada. Use it in real life.*
+>
+> 🌐 **Live Production Deployment:** [https://namma-tau.vercel.app](https://namma-tau.vercel.app)
 
 ---
 
