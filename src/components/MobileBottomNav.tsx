@@ -1,7 +1,7 @@
 import React from 'react';
-import { Home, Compass, MessageSquare, Mic, AlertTriangle, Award } from 'lucide-react';
+import { Home, Compass, MessageSquare, Mic, AlertTriangle, Award, User } from 'lucide-react';
 
-export type NavTab = 'home' | 'learn' | 'simulator' | 'pronounce' | 'quizzes' | 'quickhelp' | 'progress';
+export type NavTab = 'home' | 'learn' | 'simulator' | 'pronounce' | 'quizzes' | 'quickhelp' | 'progress' | 'profile';
 
 interface MobileBottomNavProps {
   activeTab: NavTab;
@@ -20,6 +20,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     { id: 'pronounce' as NavTab, label: 'Studio', icon: Mic },
     { id: 'quickhelp' as NavTab, label: 'Help', icon: AlertTriangle, isAlert: true },
     { id: 'progress' as NavTab, label: 'Progress', icon: Award },
+    { id: 'profile' as NavTab, label: 'Profile', icon: User },
   ];
 
   return (

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NavTab } from './MobileBottomNav';
-import type { InterfaceLanguage } from '../types';
+import type { InterfaceLanguage, UserAccount } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import {
   Bookmark,
@@ -15,6 +15,7 @@ import {
   Mic,
   HelpCircle,
   Home,
+  User,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -25,6 +26,8 @@ interface HeaderProps {
   dailyGoal: number;
   xp: number;
   language: InterfaceLanguage;
+  user?: UserAccount | null;
+  onOpenAuthModal?: () => void;
   onOpenPocketbook: () => void;
   onOpenBackpack: () => void;
   onOpenSurprise: () => void;
@@ -40,6 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   dailyGoal,
   xp,
   language,
+  user,
+  onOpenAuthModal,
   onOpenPocketbook,
   onOpenBackpack,
   onOpenSurprise,
@@ -147,6 +152,35 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
+            {/* Profile / Sign In Action Button */}
+            {user && !user.isGuest ? (
+              <button
+                onClick={() => onSelectTab('profile')}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+                  activeTab === 'profile'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800'
+                }`}
+                title="View your cloud profile"
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-900 text-amber-300 flex items-center justify-center text-[10px] font-bold">
+                  {user.displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline max-w-[90px] truncate">
+                  {user.displayName.split(' ')[0]}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAuthModal}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-bold transition-all shadow-2xs"
+                title="Sign in or create account to back up progress"
+              >
+                <User className="w-3.5 h-3.5 text-blue-700" />
+                <span className="hidden sm:inline">Sign In</span>
+              </button>
+            )}
+
             {/* Settings */}
             <button
               onClick={onOpenSettings}
@@ -169,6 +203,11 @@ export const Header: React.FC<HeaderProps> = ({
             { id: 'quizzes' as NavTab, label: t.navQuizzes, icon: HelpCircle },
             { id: 'quickhelp' as NavTab, label: t.navQuickHelp, icon: AlertTriangle, isAlert: true },
             { id: 'progress' as NavTab, label: t.navProgress, icon: Award },
+            {
+              id: 'profile' as NavTab,
+              label: user && !user.isGuest ? user.displayName.split(' ')[0] : 'Profile',
+              icon: User,
+            },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

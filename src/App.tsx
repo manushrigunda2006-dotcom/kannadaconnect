@@ -1,10 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
-import type { SituationId, Phrase, ToastMessage, AppSettings } from './types';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import type { SituationId, Phrase, ToastMessage, AppSettings, UserAccount, AuthMode } from './types';
 import type { NavTab } from './components/MobileBottomNav';
 import { SITUATIONS } from './data/situations';
 import { PHRASES } from './data/phrases';
 import { matchPhraseWithQuery } from './utils/search';
 import { speakKannada, stopSpeech } from './utils/speech';
+import { getCurrentUser, onAuthStateChange, signOut as apiSignOut } from './services/authService';
+import { syncAndMergeOnLogin, saveCloudData } from './services/cloudSyncService';
 import {
   getSavedPhraseIds,
   toggleSavePhrase,
@@ -34,6 +36,8 @@ import { QuizSection } from './components/QuizSection';
 import { PronunciationStudio } from './components/PronunciationStudio';
 import { QuickHelp } from './components/QuickHelp';
 import { ProgressDashboard } from './components/ProgressDashboard';
+import { ProfilePage } from './components/ProfilePage';
+import { AuthModal } from './components/AuthModal';
 import { PocketbookModal } from './components/PocketbookModal';
 import { TripBackpackModal } from './components/TripBackpackModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -52,10 +56,51 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [studioInitialPhraseId, setStudioInitialPhraseId] = useState<string | undefined>(undefined);
 
+  // User Authentication & Cloud Sync State
+  const [user, setUser] = useState<UserAccount>({
+    id: 'guest',
+    email: '',
+    displayName: 'Guest Learner',
+    isGuest: true,
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthMode>('login');
+
   // Persisted Storage States
   const [savedIds, setSavedIds] = useState<string[]>(getSavedPhraseIds);
   const [progress, setProgress] = useState(getPracticeProgress);
   const [settings, setSettings] = useState<AppSettings>(getAppSettings);
+
+  // Check initial user session & subscribe to auth state
+  useEffect(() => {
+    getCurrentUser().then(async (activeUser) => {
+      if (activeUser) {
+        setUser(activeUser);
+        try {
+          const merged = await syncAndMergeOnLogin(activeUser.id);
+          setProgress(merged.progress);
+          setSavedIds(merged.savedIds);
+        } catch (e) {
+          console.warn('Initial session sync notice:', e);
+        }
+      }
+    });
+
+    const unsubscribe = onAuthStateChange(async (updatedUser) => {
+      if (updatedUser) {
+        setUser(updatedUser);
+      } else {
+        setUser({
+          id: 'guest',
+          email: '',
+          displayName: 'Guest Learner',
+          isGuest: true,
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Audio state
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
@@ -140,6 +185,10 @@ export function App() {
       const isNowSaved = updated.includes(id);
       setSavedIds(updated);
 
+      if (!user.isGuest) {
+        saveCloudData(user.id, progress, updated);
+      }
+
       const phrase = PHRASES.find((p) => p.id === id);
       if (isNowSaved) {
         showToast(
@@ -151,13 +200,17 @@ export function App() {
         showToast('Removed from Pocketbook', 'Phrase unpinned.', 'info');
       }
     },
-    [showToast]
+    [showToast, user, progress]
   );
 
   const handleMarkPracticed = useCallback(
     (id: string) => {
       const { progress: updated, isNewPractice, goalCompletedJustNow } = markPhrasePracticed(id);
       setProgress(updated);
+
+      if (!user.isGuest) {
+        saveCloudData(user.id, updated, savedIds);
+      }
 
       const phrase = PHRASES.find((p) => p.id === id);
 
@@ -183,7 +236,7 @@ export function App() {
         );
       }
     },
-    [showToast, settings.reducedMotion]
+    [showToast, settings.reducedMotion, user, savedIds]
   );
 
   const handlePlayAudio = useCallback(
@@ -250,6 +303,9 @@ export function App() {
   const handleScenarioCompleted = (scenarioId: string, score: number) => {
     const updated = recordScenarioCompletion(scenarioId, score);
     setProgress(updated);
+    if (!user.isGuest) {
+      saveCloudData(user.id, updated, savedIds);
+    }
     showToast(
       'Role-Play Completed!',
       `Scenario solved with score ${score}. +${score * 15} XP added to your profile!`,
@@ -260,11 +316,68 @@ export function App() {
   const handleQuizCompleted = (attempted: number, correct: number, earnedXp: number) => {
     const updated = recordQuizResult(attempted, correct, earnedXp);
     setProgress(updated);
+    if (!user.isGuest) {
+      saveCloudData(user.id, updated, savedIds);
+    }
     showToast(
       'Quiz Completed!',
       `Answered ${correct}/${attempted} questions correctly. +${earnedXp} XP earned!`,
       'success'
     );
+  };
+
+  const handleAuthSuccess = async (authedUser: UserAccount, message: string) => {
+    setUser(authedUser);
+    showToast('Signed In Successfully', message, 'success');
+
+    // Automatically merge guest data into this account without duplicates
+    try {
+      const merged = await syncAndMergeOnLogin(authedUser.id);
+      setProgress(merged.progress);
+      setSavedIds(merged.savedIds);
+      showToast(
+        'Data Synced',
+        'Your guest progress and bookmarks have been merged into your cloud account!',
+        'success'
+      );
+    } catch (e) {
+      console.warn('Sync error after sign in:', e);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await apiSignOut();
+    setUser({
+      id: 'guest',
+      email: '',
+      displayName: 'Guest Learner',
+      isGuest: true,
+    });
+    showToast(
+      'Signed Out',
+      'You are now browsing as a Guest. Local data remains saved in this browser.',
+      'info'
+    );
+  };
+
+  const handleManualSync = async () => {
+    if (user.isGuest) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    try {
+      const merged = await syncAndMergeOnLogin(user.id);
+      setProgress(merged.progress);
+      setSavedIds(merged.savedIds);
+      showToast(
+        'Cloud Sync Complete',
+        'All progress and bookmarks backed up to Supabase.',
+        'success'
+      );
+    } catch (e: any) {
+      showToast('Sync Error', e?.message || 'Failed to sync with cloud.', 'warning');
+    }
   };
 
   const handleUpdateSettings = (newSettings: AppSettings) => {
@@ -345,6 +458,11 @@ export function App() {
         dailyGoal={progress.dailyGoal}
         xp={progress.xp}
         language={settings.language}
+        user={user}
+        onOpenAuthModal={() => {
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
         onOpenPocketbook={() => setIsPocketbookOpen(true)}
         onOpenBackpack={() => setIsBackpackOpen(true)}
         onOpenSurprise={handleOpenSurprise}
@@ -504,6 +622,35 @@ export function App() {
             onStartScenario={() => setActiveTab('simulator')}
           />
         )}
+        {activeTab === 'profile' && (
+          <ProfilePage
+            user={user}
+            progress={progress}
+            savedPhrasesCount={savedIds.length}
+            phrases={PHRASES}
+            onOpenAuthModal={() => {
+              setAuthModalMode('login');
+              setIsAuthModalOpen(true);
+            }}
+            onUpdateGoal={(goal) => {
+              const updated = setDailyGoal(goal);
+              setProgress(updated);
+              if (!user.isGuest) {
+                saveCloudData(user.id, updated, savedIds);
+              }
+              showToast('Daily Goal Updated', `Target set to ${goal} phrases/day`, 'success');
+            }}
+            onUserUpdated={(updatedUser) => {
+              setUser(updatedUser);
+              showToast('Profile Updated', `Display name saved as ${updatedUser.displayName}`, 'success');
+            }}
+            onSignOut={handleSignOut}
+            onManualSync={handleManualSync}
+            onOpenPocketbook={() => setIsPocketbookOpen(true)}
+            onPlayAudio={handlePlayAudio}
+            onSelectTab={setActiveTab}
+          />
+        )}
       </main>
 
       {/* Footer */}
@@ -591,6 +738,14 @@ export function App() {
       <CultureGuideModal
         isOpen={isCultureGuideOpen}
         onClose={() => setIsCultureGuideOpen(false)}
+      />
+
+      {/* Supabase Authentication Modal (Sign In, Sign Up, Forgot Password) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authModalMode}
+        onAuthSuccess={handleAuthSuccess}
       />
 
       {/* Toast Notification Layer */}

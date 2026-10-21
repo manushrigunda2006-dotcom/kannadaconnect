@@ -244,20 +244,100 @@ Runs `oxlint` with 0 errors and 0 warnings.
 
 ---
 
-## 🔑 7. Environment Variables
+## 🔐 7. Authentication & Cloud Profile Architecture (Supabase Auth)
 
-**No environment variables or paid API keys are required to run all features of KannadaConnect.**
+KannadaConnect features a secure, privacy-first authentication and cloud synchronization system built using **Supabase Auth** and PostgreSQL with **Row Level Security (RLS)**.
 
-The application runs 100% reliably client-side. If you wish to connect an optional server-side LLM endpoint in the future (as outlined in `src/services/aiService.ts`), you can configure:
+### A. Core Architecture & Philosophy
 
-```env
-# Optional: Only needed if proxying to a custom server-side LLM backend
-VITE_KANNADA_AI_ENDPOINT=https://your-backend-api.com/api/kannada-tutor
-```
+1. **Unrestricted Guest Access:**
+   - Anyone can open KannadaConnect and immediately start learning, practicing phrases, bookmarking, and taking quizzes without an account.
+   - Guest data is preserved safely in local browser storage (`localStorage`).
+
+2. **Full Auth Lifecycle:**
+   - **Sign Up:** Email, password (min. 6 characters), confirm password with mismatch detection, and learner display name.
+   - **Log In:** Email & password authentication directly against Supabase.
+   - **Forgot Password:** Self-service password reset email dispatched via Supabase.
+   - **Log Out:** Cleans active session and returns learner safely to Guest mode.
+   - **Show / Hide Password:** Accessible eye toggle buttons for password inspection.
+   - **Validation:** Clear, accessible inline error messages and email format checks.
+
+3. **Automatic Deduplicating Cloud Merge:**
+   - When a guest signs in or creates an account, KannadaConnect seamlessly merges all local browser progress into their cloud profile without creating duplicate records:
+     - Practiced phrase IDs: mathematical set union.
+     - Bookmarks (Pocketbook): mathematical set union.
+     - Streaks: maximum consecutive days retained.
+     - XP Points: maximum score retained.
+     - Badges: mathematical set union.
+     - Custom Backpack Trips: merged by collection ID/name.
+
+4. **Security & Zero Plaintext Passwords:**
+   - **No passwords** are ever stored in the application database, client storage, or frontend code. Password hashing and authentication are strictly handled by Supabase Auth.
+   - **Public Client Key Only:** Only the anonymous public client key (`VITE_SUPABASE_ANON_KEY`) is included in client bundles. Service-role keys and private server secrets are never exposed.
+   - **Row Level Security (RLS):** Policies in Postgres enforce `auth.uid() = user_id`, guaranteeing learners can only access and modify their own records.
+   - **Resilient Fallback:** Automatically backs up progress to Supabase `user_metadata` in addition to Postgres tables, so cloud sync functions out-of-the-box even before running SQL scripts.
+
+5. **Learner Profile Page (`/profile`):**
+   - Accessible directly from the top navigation bar and mobile bottom nav.
+   - Displays learner display name, email, cloud sync status, target daily goal, practiced phrase count & list, streak days, XP, and full achievement badge shelf.
+   - Allows signed-in learners to update their display name and adjust their daily learning goal (3, 5, 10, or 15 phrases/day).
 
 ---
 
-## 🌐 8. Deployment Instructions
+## 🛠️ 8. Supabase Setup & Environment Variables
+
+If you wish to link your own Supabase project for multi-device sync, follow these 3 steps:
+
+### Step 1: Create a Free Supabase Project
+1. Visit [supabase.com](https://supabase.com) and create a free project.
+2. In the Supabase dashboard, go to **Project Settings → API**.
+3. Copy your **Project URL** and the **`anon` `public` key**.
+
+### Step 2: Configure Environment Variables
+Create a file named `.env.local` in `namma/` (or add them in your Vercel Project Settings under **Environment Variables**):
+
+```env
+# Supabase Project URL
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+
+# Supabase Anonymous Public Key (Safe for frontend; protected by RLS)
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+*(Refer to `.env.example` in the repository for reference).*
+
+### Step 3: Run the Database Schema (Optional but Recommended)
+Open the **SQL Editor** in your Supabase dashboard and run the script located at `supabase/schema.sql`:
+
+```sql
+create table if not exists public.user_learning_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  progress jsonb not null default '{}'::jsonb,
+  saved_phrase_ids jsonb not null default '[]'::jsonb,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.user_learning_profiles enable row level security;
+
+create policy "Users can view own learning profile"
+  on public.user_learning_profiles for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own learning profile"
+  on public.user_learning_profiles for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own learning profile"
+  on public.user_learning_profiles for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+```
+
+> **Note:** If environment variables are not configured, KannadaConnect continues to operate smoothly in **Guest Mode**, saving all data to local browser storage, and clearly informs the user in the UI that cloud synchronization requires Supabase configuration.
+
+---
+
+## 🌐 9. Deployment Instructions
 
 ### Deploy to Vercel
 1. Install the Vercel CLI: `npm i -g vercel`

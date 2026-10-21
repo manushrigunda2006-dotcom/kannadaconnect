@@ -152,3 +152,15 @@ export interface ToastMessage {
   message: string;
   duration?: number;
 }
+
+// User Profile & Authentication
+export interface UserAccount {
+  id: string;
+  email: string;
+  displayName: string;
+  createdAt?: string;
+  isGuest: boolean;
+}
+
+export type AuthMode = 'login' | 'signup' | 'forgot_password';
+
