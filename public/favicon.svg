@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="16" fill="#1B4332"/>
+  <circle cx="32" cy="32" r="26" fill="#2D6A4F" opacity="0.4"/>
+  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="'Noto Sans Kannada', 'Nirmala UI', sans-serif" font-weight="700" font-size="34" fill="#E8F5E9">ನ</text>
+  <circle cx="48" cy="18" r="4" fill="#84CC16"/>
+</svg>
