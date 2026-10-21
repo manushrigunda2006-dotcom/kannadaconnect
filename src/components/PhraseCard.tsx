@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Phrase, Situation } from '../types';
-import { Volume2, VolumeX, Bookmark, Check, Copy, CheckCheck, Lightbulb } from 'lucide-react';
+import { Volume2, VolumeX, Bookmark, Check, Copy, CheckCheck, Lightbulb, Mic } from 'lucide-react';
 
 interface PhraseCardProps {
   phrase: Phrase;
@@ -12,6 +12,7 @@ interface PhraseCardProps {
   onPlayAudio: (phrase: Phrase) => void;
   onToggleSave: (id: string) => void;
   onMarkPracticed: (id: string) => void;
+  onOpenStudio?: (phraseId: string) => void;
 }
 
 export const PhraseCard: React.FC<PhraseCardProps> = ({
@@ -24,12 +25,13 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
   onPlayAudio,
   onToggleSave,
   onMarkPracticed,
+  onOpenStudio,
 }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
-      const textToCopy = `${phrase.kannada}\n(${phrase.romanized})\nMeaning: ${phrase.english}\n— via Namma Kannada App`;
+      const textToCopy = `${phrase.kannada}\n(${phrase.romanized})\nMeaning: ${phrase.english}\n— KannadaConnect`;
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -44,7 +46,7 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
     const parts = text.split(new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
     return parts.map((part, i) =>
       part.toLowerCase() === highlight.toLowerCase() ? (
-        <mark key={i} className="bg-lime-200 text-emerald-950 px-0.5 rounded">
+        <mark key={i} className="bg-amber-200 text-slate-900 px-0.5 rounded">
           {part}
         </mark>
       ) : (
@@ -55,35 +57,43 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
 
   return (
     <article
-      className={`flex flex-col justify-between bg-white rounded-2xl p-5 sm:p-6 border transition-all hover:shadow-md hover:border-emerald-300 relative group ${
-        isPracticed ? 'border-lime-300/80 bg-gradient-to-b from-white to-lime-50/20' : 'border-stone-200'
+      className={`flex flex-col justify-between bg-white rounded-3xl p-5 sm:p-6 border transition-all hover:shadow-md hover:border-blue-300 relative group ${
+        isPracticed
+          ? 'border-emerald-300/80 bg-gradient-to-b from-white to-emerald-50/20'
+          : 'border-slate-200'
       }`}
       aria-label={`Phrase: ${phrase.english}`}
     >
       <div>
         {/* Top Badges */}
-        <div className="flex items-center justify-between gap-2 mb-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div className="flex flex-wrap items-center gap-1.5">
             {situation && (
               <span
-                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${situation.accentPill}`}
+                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${situation.accentPill}`}
               >
                 {situation.titleKn} • {situation.titleEn}
               </span>
             )}
-            {phrase.tags.slice(0, 2).map((t) => (
-              <span
-                key={t}
-                className="text-[10px] font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md capitalize"
-              >
-                {t}
-              </span>
-            ))}
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-md capitalize ${
+                phrase.difficulty === 'essential'
+                  ? 'bg-rose-100 text-rose-800'
+                  : phrase.difficulty === 'beginner'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {phrase.difficulty}
+            </span>
+            <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md capitalize">
+              {phrase.usageStyle}
+            </span>
           </div>
 
           {/* Practiced indicator tag */}
           {isPracticed && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-lime-800 bg-lime-100/90 px-2 py-0.5 rounded-full border border-lime-300">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-300">
               <Check className="w-3 h-3 stroke-[3]" />
               Practiced
             </span>
@@ -92,46 +102,46 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
 
         {/* Kannada Script (Prominent & Clear) */}
         <div className="mb-2">
-          <h3 className="text-xl sm:text-2xl font-bold font-kannada text-emerald-950 tracking-normal leading-relaxed">
+          <h3 className="text-xl sm:text-2xl font-bold font-kannada text-slate-900 tracking-normal leading-relaxed">
             {renderHighlighted(phrase.kannada, searchHighlight)}
           </h3>
         </div>
 
         {/* Romanized Pronunciation */}
         <div className="mb-2.5">
-          <p className="text-sm font-semibold font-mono text-emerald-800 leading-snug">
+          <p className="text-sm font-bold font-mono text-blue-800 leading-snug">
             {renderHighlighted(phrase.romanized, searchHighlight)}
           </p>
           {phrase.pronunciationNotes && (
-            <p className="text-xs text-stone-400 font-sans mt-0.5">
+            <p className="text-xs text-slate-400 font-sans mt-0.5">
               Breakdown: {phrase.pronunciationNotes}
             </p>
           )}
         </div>
 
         {/* English Meaning */}
-        <p className="text-sm sm:text-base font-semibold text-stone-800 mb-3.5">
+        <p className="text-sm sm:text-base font-semibold text-slate-800 mb-3.5">
           "{renderHighlighted(phrase.english, searchHighlight)}"
         </p>
 
         {/* Usage Tip / Cultural Nuance */}
-        <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/60 text-xs text-amber-950 mb-4">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-950 mb-4">
+          <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            <span className="font-semibold text-amber-900">Tip:</span> {phrase.tip}
+            <span className="font-bold text-amber-900">Tip:</span> {phrase.tip}
           </p>
         </div>
       </div>
 
       {/* Action Footer */}
-      <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
         {/* Play Audio Button */}
         <button
           onClick={() => onPlayAudio(phrase)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
             isPlaying
               ? 'bg-amber-600 text-white animate-pulse'
-              : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-xs'
+              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
           }`}
           aria-label={isPlaying ? 'Speaking audio' : `Play audio for ${phrase.romanized}`}
         >
@@ -148,15 +158,27 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
           )}
         </button>
 
-        {/* Action icons group: Practiced, Save, Copy */}
+        {/* Action icons group: Studio, Practiced, Save, Copy */}
         <div className="flex items-center gap-1 sm:gap-1.5">
+          {/* Practice in Studio button */}
+          {onOpenStudio && (
+            <button
+              onClick={() => onOpenStudio(phrase.id)}
+              className="p-2 rounded-xl text-xs bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition-colors"
+              title="Practice pronunciation in Studio"
+              aria-label="Practice in Studio"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Mark Practiced */}
           <button
             onClick={() => onMarkPracticed(phrase.id)}
-            className={`p-2 rounded-xl text-xs transition-colors focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+            className={`p-2 rounded-xl text-xs transition-colors ${
               isPracticed
-                ? 'bg-lime-100 text-lime-900 hover:bg-lime-200'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
+                ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
             title={isPracticed ? 'Practiced today' : 'Mark as practiced'}
             aria-label={isPracticed ? 'Marked as practiced' : 'Mark phrase as practiced'}
@@ -167,21 +189,21 @@ export const PhraseCard: React.FC<PhraseCardProps> = ({
           {/* Save / Bookmark */}
           <button
             onClick={() => onToggleSave(phrase.id)}
-            className={`p-2 rounded-xl text-xs transition-colors focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+            className={`p-2 rounded-xl text-xs transition-colors ${
               isSaved
-                ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
+                ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
             title={isSaved ? 'Saved in Pocketbook' : 'Save to Pocketbook'}
             aria-label={isSaved ? 'Remove from Pocketbook' : 'Save to Pocketbook'}
           >
-            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-emerald-800 text-emerald-800' : ''}`} />
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-600 text-amber-600' : ''}`} />
           </button>
 
           {/* Copy */}
           <button
             onClick={handleCopy}
-            className="p-2 rounded-xl bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-emerald-700"
+            className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 text-xs transition-colors"
             title="Copy Kannada script & translation"
             aria-label="Copy phrase text"
           >

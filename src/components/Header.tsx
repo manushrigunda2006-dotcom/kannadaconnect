@@ -1,111 +1,196 @@
 import React from 'react';
-import { Bookmark, Sparkles, BookOpen, Award, Check } from 'lucide-react';
+import type { NavTab } from './MobileBottomNav';
+import type { InterfaceLanguage } from '../types';
+import { TRANSLATIONS } from '../data/translations';
+import {
+  Bookmark,
+  Sparkles,
+  BookOpen,
+  Award,
+  Settings,
+  AlertTriangle,
+  Briefcase,
+  Compass,
+  MessageSquare,
+  Mic,
+  HelpCircle,
+  Home,
+} from 'lucide-react';
 
 interface HeaderProps {
+  activeTab: NavTab;
+  onSelectTab: (tab: NavTab) => void;
   savedCount: number;
   practicedCount: number;
   dailyGoal: number;
+  xp: number;
+  language: InterfaceLanguage;
   onOpenPocketbook: () => void;
+  onOpenBackpack: () => void;
   onOpenSurprise: () => void;
   onOpenCultureGuide: () => void;
-  onOpenProgress: () => void;
+  onOpenSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  activeTab,
+  onSelectTab,
   savedCount,
   practicedCount,
   dailyGoal,
+  xp,
+  language,
   onOpenPocketbook,
+  onOpenBackpack,
   onOpenSurprise,
   onOpenCultureGuide,
-  onOpenProgress,
+  onOpenSettings,
 }) => {
+  const t = TRANSLATIONS[language] || TRANSLATIONS.en;
   const goalAchieved = practicedCount >= dailyGoal;
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FDFBF7]/90 backdrop-blur-md border-b border-stone-200/80">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-900 text-emerald-100 flex items-center justify-center shadow-sm border border-emerald-800">
-            <span className="font-kannada font-bold text-2xl leading-none">ನ</span>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold tracking-tight text-emerald-950">ನಮ್ಮ</span>
-              <span className="text-sm font-semibold tracking-wide uppercase text-emerald-800 font-sans">
-                Namma
-              </span>
+    <header className="sticky top-0 z-40 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-slate-200/90 shadow-2xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {/* Top Row: Brand & Global Actions */}
+        <div className="h-16 flex items-center justify-between gap-4">
+          {/* Logo & Brand Name */}
+          <button
+            onClick={() => onSelectTab('home')}
+            className="flex items-center gap-3 text-left focus:outline-hidden"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-indigo-950 text-amber-400 flex items-center justify-center shadow-xs border border-blue-800">
+              <span className="font-kannada font-bold text-2xl leading-none">ಕ</span>
             </div>
-            <p className="text-xs text-stone-500 font-medium hidden sm:block">
-              Situation-first Kannada companion
-            </p>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-black tracking-tight text-slate-900 font-sans">
+                  {t.appName}
+                </span>
+                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 uppercase tracking-wider font-mono">
+                  Beta
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
+                {t.tagline}
+              </p>
+            </div>
+          </button>
+
+          {/* Quick Action Badges */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* XP Pill */}
+            <div className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-mono font-bold shadow-2xs">
+              <span>🏆</span>
+              <span>{xp} XP</span>
+            </div>
+
+            {/* Daily Practice Count */}
+            <button
+              onClick={() => onSelectTab('progress')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-2xs ${
+                goalAchieved
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Daily practice progress"
+            >
+              <Award className="w-4 h-4 text-emerald-700" />
+              <span className="font-mono font-bold">
+                {practicedCount}/{dailyGoal}
+              </span>
+              <span className="hidden xl:inline text-[11px] text-slate-500 font-normal">
+                today
+              </span>
+            </button>
+
+            {/* Surprise Me Phrase */}
+            <button
+              onClick={onOpenSurprise}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all shadow-2xs"
+              title="Random phrase to practice"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>{t.surpriseMe}</span>
+            </button>
+
+            {/* Survival Tips */}
+            <button
+              onClick={onOpenCultureGuide}
+              className="hidden md:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs"
+              title="Survival grammar, numbers and etiquette"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-slate-600" />
+              <span>{t.survivalTips}</span>
+            </button>
+
+            {/* Trip Backpack */}
+            <button
+              onClick={onOpenBackpack}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs"
+              title="Custom Trip Backpack"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Backpack</span>
+            </button>
+
+            {/* Pocketbook (Saved) */}
+            <button
+              onClick={onOpenPocketbook}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 rounded-xl transition-all shadow-2xs"
+              aria-label={`Open pocketbook with ${savedCount} saved phrases`}
+            >
+              <Bookmark className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+              <span className="hidden sm:inline">{t.pocketbook}</span>
+              <span className="bg-blue-800 text-white text-[11px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                {savedCount}
+              </span>
+            </button>
+
+            {/* Settings */}
+            <button
+              onClick={onOpenSettings}
+              className="p-2 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-2xs"
+              title="Settings & Accessibility"
+              aria-label="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Surprise Me Button */}
-          <button
-            onClick={onOpenSurprise}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-900 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200/90 rounded-xl transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-700"
-            title="Random phrase from any situation"
-            aria-label="Surprise me with a random Kannada phrase"
-          >
-            <Sparkles className="w-4 h-4 text-emerald-700 animate-pulse" />
-            <span className="hidden md:inline">Surprise Me</span>
-            <span className="md:hidden">Surprise</span>
-          </button>
-
-          {/* Culture Guide */}
-          <button
-            onClick={onOpenCultureGuide}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-700"
-            title="Essential Kannada survival grammar & numbers"
-            aria-label="Open Kannada survival tips and grammar guide"
-          >
-            <BookOpen className="w-4 h-4 text-stone-600" />
-            <span className="hidden sm:inline">Survival Tips</span>
-          </button>
-
-          {/* Practice Progress Pill */}
-          <button
-            onClick={onOpenProgress}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-              goalAchieved
-                ? 'bg-amber-50 border-amber-300 text-amber-900'
-                : 'bg-white border-stone-200 text-stone-800 hover:bg-stone-50'
-            }`}
-            title="Daily practice progress (demo)"
-            aria-label="Open daily practice progress tracker"
-          >
-            {goalAchieved ? (
-              <span className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white">
-                <Check className="w-3 h-3 stroke-[3]" />
-              </span>
-            ) : (
-              <Award className="w-4 h-4 text-emerald-700" />
-            )}
-            <span className="text-xs font-mono font-bold">
-              {practicedCount}/{dailyGoal}
-            </span>
-            <span className="hidden lg:inline text-xs font-normal text-stone-500">
-              practiced
-            </span>
-          </button>
-
-          {/* Pocketbook (Saved Phrases) */}
-          <button
-            onClick={onOpenPocketbook}
-            className="relative flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-700"
-            aria-label={`Open pocketbook with ${savedCount} saved phrases`}
-          >
-            <Bookmark className="w-4 h-4 fill-emerald-100 text-emerald-100" />
-            <span className="hidden sm:inline">Pocketbook</span>
-            <span className="bg-emerald-700 text-white text-[11px] font-mono px-1.5 py-0.5 rounded-full font-bold ml-0.5">
-              {savedCount}
-            </span>
-          </button>
+        {/* Bottom Row: Navigation Tabs (Desktop) */}
+        <div className="hidden md:flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 no-scrollbar">
+          {[
+            { id: 'home' as NavTab, label: t.navHome, icon: Home },
+            { id: 'learn' as NavTab, label: t.navLearn, icon: Compass },
+            { id: 'simulator' as NavTab, label: t.navSimulator, icon: MessageSquare },
+            { id: 'pronounce' as NavTab, label: t.navPronounce, icon: Mic },
+            { id: 'quizzes' as NavTab, label: t.navQuizzes, icon: HelpCircle },
+            { id: 'quickhelp' as NavTab, label: t.navQuickHelp, icon: AlertTriangle, isAlert: true },
+            { id: 'progress' as NavTab, label: t.navProgress, icon: Award },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onSelectTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  isActive
+                    ? tab.isAlert
+                      ? 'bg-rose-900 text-white shadow-xs'
+                      : 'bg-blue-600 text-white shadow-xs'
+                    : tab.isAlert
+                    ? 'text-rose-700 hover:bg-rose-50'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </header>

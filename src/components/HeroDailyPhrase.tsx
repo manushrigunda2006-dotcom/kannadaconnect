@@ -1,6 +1,16 @@
 import React from 'react';
 import type { Phrase, Situation } from '../types';
-import { Volume2, VolumeX, Bookmark, Check, Shuffle, Search, Sparkles, Lightbulb, X } from 'lucide-react';
+import {
+  Volume2,
+  VolumeX,
+  Bookmark,
+  Check,
+  Search,
+  Sparkles,
+  Shuffle,
+  Lightbulb,
+  ArrowRight,
+} from 'lucide-react';
 
 interface HeroDailyPhraseProps {
   phrase: Phrase;
@@ -14,7 +24,9 @@ interface HeroDailyPhraseProps {
   onToggleSave: (id: string) => void;
   onMarkPracticed: (id: string) => void;
   onShuffleDaily: () => void;
-  onSelectSituation: (situationId: string) => void;
+  onStartLearning: () => void;
+  onExploreSituations: () => void;
+  onOpenStudio?: (phraseId: string) => void;
 }
 
 export const HeroDailyPhrase: React.FC<HeroDailyPhraseProps> = ({
@@ -29,202 +41,228 @@ export const HeroDailyPhrase: React.FC<HeroDailyPhraseProps> = ({
   onToggleSave,
   onMarkPracticed,
   onShuffleDaily,
-  onSelectSituation,
+  onStartLearning,
+  onExploreSituations,
+  onOpenStudio,
 }) => {
-  const quickSearchTags = ['Auto meter', 'UPI / Online', 'How much', 'Doctor', 'Coffee break', 'Bus'];
+  const quickSearches = [
+    { label: 'Bus Stop?', query: 'bus' },
+    { label: 'How much?', query: 'eshtu' },
+    { label: 'I need help', query: 'sahaya' },
+    { label: 'Speak slowly', query: 'nidhanavagi' },
+    { label: 'Google Pay', query: 'upi' },
+  ];
 
   return (
-    <section className="pt-8 pb-10 sm:pt-12 sm:pb-14 border-b border-stone-200/70">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Intro */}
-        <div className="max-w-3xl mb-8 sm:mb-10 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200/80 text-emerald-900 text-xs font-semibold mb-4">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            Hackathon Edition • Kannada in Everyday Life
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-emerald-950 leading-[1.15]">
-            Learn Kannada for the{' '}
-            <span className="text-emerald-800 underline decoration-lime-400 decoration-wavy decoration-2 underline-offset-8">
-              moments you live
-            </span>
-            .
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-stone-600 leading-relaxed font-normal">
-            Skip abstract grammar drills. Choose the situation you are in — hailing an auto,
-            bargaining at the market, talking to a doctor, or chatting by the coffee machine — and
-            use the exact words with confident pronunciation right now.
-          </p>
-        </div>
+    <section className="relative overflow-hidden pt-8 pb-12 sm:pt-12 sm:pb-16 border-b border-slate-200/80">
+      {/* Background Decorative Accents */}
+      <div className="absolute top-0 right-1/4 -z-10 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl opacity-70 pointer-events-none" />
+      <div className="absolute top-1/3 left-10 -z-10 w-80 h-80 bg-amber-100/40 rounded-full blur-3xl opacity-60 pointer-events-none" />
 
-        {/* Featured Daily Phrase Card */}
-        <div className="bg-gradient-to-br from-white via-white to-emerald-50/50 rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm relative overflow-hidden transition-all">
-          {/* Accent flourish */}
-          <div className="absolute top-0 right-0 w-44 h-44 bg-emerald-100/40 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-
-          {/* Card Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-stone-100">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-900 text-emerald-50">
-                <Sparkles className="w-3.5 h-3.5 text-lime-400" />
-                Featured Moment
-              </span>
-              {situation && (
-                <button
-                  onClick={() => onSelectSituation(situation.id)}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors hover:opacity-80 ${situation.accentPill}`}
-                >
-                  {situation.titleKn} • {situation.titleEn}
-                </button>
-              )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* Left Column: Hero Narrative */}
+          <div className="lg:col-span-7 space-y-5 text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+              <span>Learn Kannada. Use it in real life.</span>
             </div>
 
-            <button
-              onClick={onShuffleDaily}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-emerald-900 bg-stone-100 hover:bg-stone-200/80 px-3 py-1.5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-emerald-700"
-              title="See another featured phrase"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-              <span>Shuffle Phrase</span>
-            </button>
-          </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight font-sans leading-tight">
+              Your everyday life in Karnataka,{' '}
+              <span className="text-blue-600 underline decoration-amber-400 decoration-wavy decoration-2">
+                made easier.
+              </span>
+            </h1>
 
-          {/* Main Phrase Block */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-8 space-y-3">
-              {/* Native Script */}
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-kannada text-emerald-950 tracking-normal leading-relaxed">
-                  {phrase.kannada}
-                </h2>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl font-sans">
+              Learn practical spoken Kannada for travel, street shopping, healthcare clinics, college classrooms, public transit, and professional workplaces. With audio pronunciations, role-play dialogues, and instant phrase search.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                onClick={onStartLearning}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold shadow-md hover:shadow-lg transition-all"
+              >
+                <span>Start Learning</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={onExploreSituations}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-sm sm:text-base font-bold shadow-xs transition-all"
+              >
+                <span>Explore Real-Life Situations</span>
+              </button>
+            </div>
+
+            {/* Smart Phrase Finder Search Bar */}
+            <div className="pt-4">
+              <div className="relative max-w-xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder="Search phrases in Kannada, English, or Romanised (e.g. meter, bus, bill)..."
+                  className="w-full bg-white border border-slate-300 rounded-2xl pl-11 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 shadow-xs focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                />
               </div>
 
-              {/* Phonetic Romanization */}
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 text-stone-700">
-                <span className="text-base sm:text-lg font-medium text-emerald-900 font-mono">
-                  {phrase.romanized}
+              {/* Instant Search Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Try asking:
                 </span>
-                {phrase.pronunciationNotes && (
-                  <span className="text-xs sm:text-sm text-stone-500 font-sans">
-                    (Syallables: {phrase.pronunciationNotes})
+                {quickSearches.map((qs) => (
+                  <button
+                    key={qs.label}
+                    onClick={() => onSearchChange(qs.query)}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                  >
+                    {qs.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Daily Featured Phrase Card */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-lg p-6 sm:p-7 relative overflow-hidden group">
+              {/* Top Accent Strip */}
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-mono">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    Daily Phrase
                   </span>
+                  {situation && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">
+                      {situation.titleEn}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={onShuffleDaily}
+                  className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
+                  title="Shuffle to another phrase"
+                  aria-label="Shuffle daily phrase"
+                >
+                  <Shuffle className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Kannada Script (Prominent & Clear) */}
+              <div className="my-3">
+                <h3 className="text-2xl sm:text-3xl font-extrabold font-kannada text-slate-900 leading-snug tracking-normal">
+                  {phrase.kannada}
+                </h3>
+              </div>
+
+              {/* Romanized Pronunciation */}
+              <div className="mb-3">
+                <p className="text-sm sm:text-base font-bold font-mono text-blue-800">
+                  {phrase.romanized}
+                </p>
+                {phrase.pronunciationNotes && (
+                  <p className="text-xs text-slate-400 font-sans mt-0.5">
+                    Breakdown: {phrase.pronunciationNotes}
+                  </p>
                 )}
               </div>
 
               {/* English Meaning */}
-              <p className="text-lg sm:text-xl font-semibold text-stone-900">
+              <p className="text-sm sm:text-base font-semibold text-slate-700 italic mb-4">
                 "{phrase.english}"
               </p>
 
-              {/* Practical Tip */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/70 text-xs sm:text-sm text-amber-950 mt-2">
-                <Lightbulb className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              {/* Cultural Usage Tip */}
+              <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-950 mb-5">
+                <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong className="font-semibold text-amber-900">Nuance:</strong> {phrase.tip}
+                  <span className="font-bold text-amber-900">Street Context:</span> {phrase.tip}
                 </p>
               </div>
-            </div>
 
-            {/* Quick Actions Panel */}
-            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2.5 justify-center lg:border-l lg:border-stone-100 lg:pl-6">
-              {/* Play Audio */}
-              <button
-                onClick={() => onPlayAudio(phrase)}
-                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm transition-all focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                  isPlaying
-                    ? 'bg-amber-600 text-white animate-pulse'
-                    : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-sm'
-                }`}
-                aria-label={`Listen to pronunciation of ${phrase.kannada}`}
-              >
-                {isPlaying ? (
-                  <>
-                    <VolumeX className="w-4 h-4" />
-                    <span>Speaking...</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-4 h-4" />
-                    <span>Listen & Practice</span>
-                  </>
-                )}
-              </button>
+              {/* Card Footer Actions */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  onClick={() => onPlayAudio(phrase)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white shadow-xs transition-all ${
+                    isPlaying
+                      ? 'bg-amber-600 animate-pulse'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                  aria-label="Listen to audio pronunciation"
+                >
+                  {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  <span>{isPlaying ? 'Speaking...' : 'Listen Audio'}</span>
+                </button>
 
-              {/* Save to Pocketbook */}
-              <button
-                onClick={() => onToggleSave(phrase.id)}
-                className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm border transition-all focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                  isSaved
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
-                    : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
-                }`}
-                aria-label={isSaved ? 'Remove from pocketbook' : 'Save to pocketbook'}
-              >
-                <Bookmark
-                  className={`w-4 h-4 ${isSaved ? 'fill-emerald-800 text-emerald-800' : 'text-stone-500'}`}
-                />
-                <span>{isSaved ? 'Saved in Pocketbook' : 'Save to Pocketbook'}</span>
-              </button>
+                <div className="flex items-center gap-1.5">
+                  {onOpenStudio && (
+                    <button
+                      onClick={() => onOpenStudio(phrase.id)}
+                      className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                      title="Practice pronunciation in studio"
+                    >
+                      Studio
+                    </button>
+                  )}
 
-              {/* Mark Practiced */}
-              <button
-                onClick={() => onMarkPracticed(phrase.id)}
-                className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm border transition-all focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                  isPracticed
-                    ? 'bg-lime-50 border-lime-300 text-lime-900 font-semibold'
-                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
-                }`}
-                aria-label="Mark phrase as practiced"
-              >
-                <Check
-                  className={`w-4 h-4 ${isPracticed ? 'text-lime-700 stroke-[3]' : 'text-stone-400'}`}
-                />
-                <span>{isPracticed ? 'Practiced Today ✓' : 'Mark as Practiced'}</span>
-              </button>
+                  <button
+                    onClick={() => onMarkPracticed(phrase.id)}
+                    className={`p-2 rounded-xl text-xs transition-colors ${
+                      isPracticed
+                        ? 'bg-emerald-100 text-emerald-900 font-bold'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    }`}
+                    title={isPracticed ? 'Practiced today' : 'Mark as practiced'}
+                  >
+                    <Check className={`w-4 h-4 ${isPracticed ? 'stroke-[3]' : ''}`} />
+                  </button>
+
+                  <button
+                    onClick={() => onToggleSave(phrase.id)}
+                    className={`p-2 rounded-xl text-xs transition-colors ${
+                      isSaved
+                        ? 'bg-amber-100 text-amber-900'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                    }`}
+                    title={isSaved ? 'Saved in Pocketbook' : 'Save to Pocketbook'}
+                  >
+                    <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-600 text-amber-600' : ''}`} />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Global Live Search Bar */}
-        <div className="mt-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search across Kannada script (e.g. ಬೆಲೆ), romanized words (e.g. 'eshtu', 'auto'), or English meaning..."
-              className="w-full pl-12 pr-11 py-3.5 bg-white border border-stone-200 rounded-2xl text-stone-900 text-sm sm:text-base placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-transparent shadow-xs transition-all"
-              aria-label="Search Kannada phrases"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => onSearchChange('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 rounded-lg hover:bg-stone-100"
-                aria-label="Clear search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+        {/* Small "Made for Everyday Karnataka" Section */}
+        <div className="mt-12 pt-8 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="p-3">
+            <span className="text-2xl block mb-1">🛺</span>
+            <p className="text-xs font-bold text-slate-800">Auto & BMTC Ready</p>
+            <p className="text-[11px] text-slate-500">Hailing & routes without stress</p>
           </div>
-
-          {/* Quick search tags */}
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-              Quick search:
-            </span>
-            {quickSearchTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => onSearchChange(tag)}
-                className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                  searchQuery.toLowerCase() === tag.toLowerCase()
-                    ? 'bg-emerald-900 text-white border-emerald-900'
-                    : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-600'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+          <div className="p-3">
+            <span className="text-2xl block mb-1">🛍️</span>
+            <p className="text-xs font-bold text-slate-800">Markets & UPI Billing</p>
+            <p className="text-[11px] text-slate-500">Gentle bargaining & QR codes</p>
+          </div>
+          <div className="p-3">
+            <span className="text-2xl block mb-1">🩺</span>
+            <p className="text-xs font-bold text-slate-800">Clinic & Emergency</p>
+            <p className="text-[11px] text-slate-500">Expressing symptoms clearly</p>
+          </div>
+          <div className="p-3">
+            <span className="text-2xl block mb-1">💼</span>
+            <p className="text-xs font-bold text-slate-800">Workplace & Filter Coffee</p>
+            <p className="text-[11px] text-slate-500">Connect with local colleagues</p>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
-import React from 'react';
-import type { Phrase, Situation, SituationId } from '../types';
+import React, { useState, useMemo } from 'react';
+import type { Phrase, Situation, SituationId, DifficultyLevel, UsageStyle } from '../types';
 import { PhraseCard } from './PhraseCard';
-import { AlertTriangle, SearchX, PhoneCall } from 'lucide-react';
+import { Search, RotateCcw } from 'lucide-react';
 
 interface PhraseGridProps {
   phrases: Phrase[];
@@ -16,6 +16,7 @@ interface PhraseGridProps {
   onMarkPracticed: (id: string) => void;
   onClearSearch: () => void;
   onResetSituation: () => void;
+  onOpenStudio?: (phraseId: string) => void;
 }
 
 export const PhraseGrid: React.FC<PhraseGridProps> = ({
@@ -31,102 +32,93 @@ export const PhraseGrid: React.FC<PhraseGridProps> = ({
   onMarkPracticed,
   onClearSearch,
   onResetSituation,
+  onOpenStudio,
 }) => {
-  const activeSituation =
-    selectedSituation === 'all'
-      ? null
-      : situations.find((s) => s.id === selectedSituation);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel | 'all'>('all');
+  const [selectedStyle, setSelectedStyle] = useState<UsageStyle | 'all'>('all');
 
-  const situationMap = situations.reduce<Record<string, Situation>>((acc, s) => {
-    acc[s.id] = s;
-    return acc;
-  }, {});
+  // Filter phrases based on difficulty and style
+  const filteredPhrases = useMemo(() => {
+    return phrases.filter((p) => {
+      const matchDifficulty =
+        selectedDifficulty === 'all' || p.difficulty === selectedDifficulty;
+      const matchStyle = selectedStyle === 'all' || p.usageStyle === selectedStyle;
+      return matchDifficulty && matchStyle;
+    });
+  }, [phrases, selectedDifficulty, selectedStyle]);
 
-  const isHealthcare = selectedSituation === 'healthcare';
+  const activeSituationObj = situations.find((s) => s.id === selectedSituation);
 
   return (
-    <section className="py-6 sm:py-8" id="phrasebook-section" aria-label="Phrasebook">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-stone-200">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-emerald-950">
-                {activeSituation ? (
-                  <span>
-                    <span className="font-kannada">{activeSituation.titleKn}</span> •{' '}
-                    {activeSituation.titleEn} Phrases
-                  </span>
-                ) : (
-                  <span>All Everyday Phrases</span>
-                )}
-              </h2>
-              <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full">
-                {phrases.length} {phrases.length === 1 ? 'phrase' : 'phrases'}
-              </span>
-            </div>
-            {activeSituation && (
-              <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                {activeSituation.description}
-              </p>
-            )}
-            {searchQuery && (
-              <p className="text-xs sm:text-sm text-emerald-800 font-medium mt-1">
-                Filtering results for: <span className="font-bold">"{searchQuery}"</span>
-              </p>
-            )}
+    <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6" id="phrasebook-section">
+      {/* Title & Filter Controls Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+            {activeSituationObj
+              ? `${activeSituationObj.titleEn} Phrases`
+              : 'Practical Everyday Kannada Phrasebook'}
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            Showing {filteredPhrases.length} verified phrases
+            {selectedSituation !== 'all' && ` for ${activeSituationObj?.titleEn}`}
+            {searchQuery && ` matching "${searchQuery}"`}
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Difficulty Filter */}
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-2">Level:</span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'beginner', label: 'Beginner' },
+              { id: 'essential', label: 'Essential' },
+              { id: 'intermediate', label: 'Intermediate' },
+            ].map((d) => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDifficulty(d.id as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  selectedDifficulty === d.id
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
 
-          {/* Quick Filter Reset */}
-          {(selectedSituation !== 'all' || searchQuery) && (
+          {/* Reset Filters */}
+          {(selectedDifficulty !== 'all' || selectedStyle !== 'all' || selectedSituation !== 'all' || searchQuery) && (
             <button
               onClick={() => {
-                onClearSearch();
+                setSelectedDifficulty('all');
+                setSelectedStyle('all');
                 onResetSituation();
+                onClearSearch();
               }}
-              className="self-start sm:self-auto text-xs font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
             >
-              Reset All Filters
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Filters</span>
             </button>
           )}
         </div>
+      </div>
 
-        {/* Healthcare Mandatory Disclaimer Banner */}
-        {isHealthcare && (
-          <div
-            role="alert"
-            className="mb-8 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-950 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-              <div className="text-xs sm:text-sm leading-relaxed">
-                <p className="font-bold text-amber-950">
-                  Notice: Healthcare Communication Aids Only
-                </p>
-                <p className="text-amber-900 mt-0.5">
-                  These phrases are intended to help learners communicate basic discomfort and
-                  ask for assistance at local clinics or pharmacies. They are{' '}
-                  <strong>not medical advice</strong> and do not substitute professional medical care
-                  or emergency dispatch.
-                </p>
-              </div>
-            </div>
-
-            <div className="shrink-0 flex items-center gap-2 bg-amber-100/80 px-3 py-2 rounded-xl border border-amber-300 text-xs font-bold text-amber-900">
-              <PhoneCall className="w-4 h-4 text-amber-800" />
-              <span>Karnataka Emergency: 112 / 108</span>
-            </div>
-          </div>
-        )}
-
-        {/* Phrases Grid or Empty State */}
-        {phrases.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {phrases.map((phrase) => (
+      {/* Grid of Phrase Cards */}
+      {filteredPhrases.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPhrases.map((phrase) => {
+            const situation = situations.find((s) => s.id === phrase.situation);
+            return (
               <PhraseCard
                 key={phrase.id}
                 phrase={phrase}
-                situation={situationMap[phrase.situation]}
+                situation={situation}
                 isSaved={savedIds.includes(phrase.id)}
                 isPracticed={practicedIds.includes(phrase.id)}
                 isPlaying={playingPhraseId === phrase.id}
@@ -134,40 +126,35 @@ export const PhraseGrid: React.FC<PhraseGridProps> = ({
                 onPlayAudio={onPlayAudio}
                 onToggleSave={onToggleSave}
                 onMarkPracticed={onMarkPracticed}
+                onOpenStudio={onOpenStudio}
               />
-            ))}
+            );
+          })}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center max-w-lg mx-auto shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+            <Search className="w-6 h-6" />
           </div>
-        ) : (
-          /* Empty Search State */
-          <div className="py-16 text-center bg-white rounded-3xl border border-dashed border-stone-300 p-8 max-w-lg mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-stone-100 text-stone-500 mx-auto flex items-center justify-center mb-4">
-              <SearchX className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg font-bold text-stone-900">
-              ಯಾವುದೂ ಸಿಗಲಿಲ್ಲ (No phrases found)
-            </h3>
-            <p className="text-sm text-stone-500 mt-2 leading-relaxed">
-              We couldn't find phrases matching{' '}
-              <span className="font-semibold text-stone-700">"{searchQuery}"</span> in the current
-              filter.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <button
-                onClick={onClearSearch}
-                className="px-4 py-2 bg-emerald-900 text-white rounded-xl text-xs font-semibold hover:bg-emerald-800 transition-colors"
-              >
-                Clear Search Query
-              </button>
-              <button
-                onClick={onResetSituation}
-                className="px-4 py-2 bg-stone-100 text-stone-700 rounded-xl text-xs font-semibold hover:bg-stone-200 transition-colors"
-              >
-                Show All Situations
-              </button>
-            </div>
+          <h3 className="text-lg font-bold text-slate-900 font-sans">No matching phrases found</h3>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-5">
+            We couldn't find any phrases matching "{searchQuery}". Try searching for common English terms like "bus", "meter", "price", or "help".
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => {
+                onClearSearch();
+                onResetSituation();
+                setSelectedDifficulty('all');
+              }}
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-xs transition-colors"
+            >
+              Show All 60 Phrases
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };

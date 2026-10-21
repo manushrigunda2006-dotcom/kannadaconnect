@@ -36,142 +36,127 @@ export const SurpriseModal: React.FC<SurpriseModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="surprise-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
     >
-      <div className="bg-[#FDFBF7] rounded-3xl border border-stone-300 shadow-2xl max-w-lg w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="bg-[#FDFBF7] rounded-3xl border border-slate-300 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b border-stone-200 bg-white flex items-center justify-between">
+        <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-lime-400 text-emerald-950 flex items-center justify-center shadow-xs">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
             </div>
             <div>
-              <h2 id="surprise-title" className="text-lg font-bold text-emerald-950">
-                Surprise Phrase • <span className="font-kannada font-normal">ಅನಿರೀಕ್ಷಿತ</span>
+              <h2 id="surprise-title" className="text-lg font-bold text-slate-900 font-sans">
+                Surprise Phrase (ಅನಿರೀಕ್ಷಿತ)
               </h2>
-              <p className="text-xs text-stone-500">
-                A random everyday phrase to spark a conversational moment.
+              <p className="text-xs text-slate-500">
+                Spontaneous real-life Kannada practice
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-100 transition-colors"
-            aria-label="Close surprise phrase"
+            className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+            aria-label="Close surprise modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Card Content */}
-        <div className="p-6 space-y-4">
-          {/* Situation badge */}
+        {/* Content Body */}
+        <div className="p-6 text-center space-y-4">
           {situation && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border bg-emerald-100 text-emerald-900 border-emerald-300">
-              <span>{situation.titleKn}</span>
-              <span>•</span>
-              <span>{situation.titleEn}</span>
-            </div>
+            <span
+              className={`inline-block text-xs font-bold px-3 py-1 rounded-full border ${situation.accentPill}`}
+            >
+              {situation.titleKn} • {situation.titleEn}
+            </span>
           )}
 
           {/* Kannada Script */}
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-3">
-            <h3 className="text-2xl sm:text-3xl font-bold font-kannada text-emerald-950 leading-relaxed">
+          <div className="py-2">
+            <h3 className="text-2xl sm:text-3xl font-extrabold font-kannada text-slate-900 leading-relaxed">
               {phrase.kannada}
             </h3>
+          </div>
 
-            <div className="space-y-1">
-              <p className="text-base font-semibold font-mono text-emerald-800">
-                {phrase.romanized}
-              </p>
-              {phrase.pronunciationNotes && (
-                <p className="text-xs text-stone-400 font-sans">
-                  Syllables: {phrase.pronunciationNotes}
-                </p>
-              )}
-            </div>
-
-            <p className="text-base sm:text-lg font-bold text-stone-900">
-              "{phrase.english}"
+          {/* Romanized */}
+          <div>
+            <p className="text-base font-bold font-mono text-blue-800">
+              {phrase.romanized}
             </p>
-
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-950">
-              <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                <span className="font-semibold text-amber-900">Usage note:</span> {phrase.tip}
+            {phrase.pronunciationNotes && (
+              <p className="text-xs text-slate-400 font-sans mt-0.5">
+                Breakdown: {phrase.pronunciationNotes}
               </p>
-            </div>
+            )}
           </div>
 
-          {/* Action buttons */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Play Audio */}
-            <button
-              onClick={() => onPlayAudio(phrase)}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all ${
-                isPlaying
-                  ? 'bg-amber-600 text-white animate-pulse'
-                  : 'bg-emerald-900 hover:bg-emerald-800 text-white'
-              }`}
-            >
-              {isPlaying ? (
-                <>
-                  <VolumeX className="w-4 h-4" />
-                  <span>Speaking...</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-4 h-4" />
-                  <span>Pronounce</span>
-                </>
-              )}
-            </button>
+          {/* English Meaning */}
+          <p className="text-sm font-semibold text-slate-700 italic">
+            "{phrase.english}"
+          </p>
 
-            {/* Save */}
-            <button
-              onClick={() => onToggleSave(phrase.id)}
-              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm border transition-all ${
-                isSaved
-                  ? 'bg-emerald-100 border-emerald-300 text-emerald-900'
-                  : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-700'
-              }`}
-            >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-emerald-800 text-emerald-800' : ''}`} />
-              <span>{isSaved ? 'Saved' : 'Save'}</span>
-            </button>
+          {/* Cultural Tip */}
+          <div className="text-left flex items-start gap-2.5 p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-950">
+            <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <span className="font-bold text-amber-900">Street Context:</span> {phrase.tip}
+            </p>
           </div>
-
-          {/* Mark Practiced */}
-          <button
-            onClick={() => onMarkPracticed(phrase.id)}
-            className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-xs border transition-all ${
-              isPracticed
-                ? 'bg-lime-50 border-lime-300 text-lime-900 font-semibold'
-                : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
-            }`}
-          >
-            <Check className={`w-4 h-4 ${isPracticed ? 'text-lime-700 stroke-[3]' : 'text-stone-400'}`} />
-            <span>{isPracticed ? 'Practiced Today ✓' : 'Mark as Practiced'}</span>
-          </button>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-stone-200 bg-white flex items-center justify-between">
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-slate-200 bg-white flex items-center justify-between gap-2">
+          {/* Audio button */}
           <button
-            onClick={onNextSurprise}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-semibold transition-colors"
+            onClick={() => onPlayAudio(phrase)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              isPlaying
+                ? 'bg-amber-600 text-white animate-pulse'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+            }`}
           >
-            <Shuffle className="w-3.5 h-3.5" />
-            <span>Roll Another Phrase</span>
+            {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            <span>{isPlaying ? 'Speaking...' : 'Listen'}</span>
           </button>
 
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-emerald-900 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold transition-colors"
-          >
-            Close
-          </button>
+          {/* Mark & Save */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onMarkPracticed(phrase.id)}
+              className={`p-2.5 rounded-xl text-xs transition-colors ${
+                isPracticed
+                  ? 'bg-emerald-100 text-emerald-900 font-bold'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+              title="Mark practiced"
+            >
+              <Check className={`w-4 h-4 ${isPracticed ? 'stroke-[3]' : ''}`} />
+            </button>
+
+            <button
+              onClick={() => onToggleSave(phrase.id)}
+              className={`p-2.5 rounded-xl text-xs transition-colors ${
+                isSaved
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+              title="Save to pocketbook"
+            >
+              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-600 text-amber-600' : ''}`} />
+            </button>
+
+            {/* Roll next */}
+            <button
+              onClick={onNextSurprise}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold shadow-xs transition-colors"
+            >
+              <Shuffle className="w-4 h-4" />
+              <span>Next</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
