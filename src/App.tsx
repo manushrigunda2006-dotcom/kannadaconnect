@@ -3,6 +3,7 @@ import type { SituationId, Phrase, ToastMessage, AppSettings } from './types';
 import type { NavTab } from './components/MobileBottomNav';
 import { SITUATIONS } from './data/situations';
 import { PHRASES } from './data/phrases';
+import { matchPhraseWithQuery } from './utils/search';
 import { speakKannada, stopSpeech } from './utils/speech';
 import {
   getSavedPhraseIds,
@@ -113,25 +114,19 @@ export function App() {
     return counts;
   }, []);
 
-  // Filtered phrases for PhraseGrid
+  // Matches across all 6 categories for active query
+  const allCategoryMatches = useMemo(() => {
+    if (!searchQuery.trim()) return PHRASES;
+    return PHRASES.filter((p) => matchPhraseWithQuery(p, searchQuery));
+  }, [searchQuery]);
+
+  // Filtered phrases for PhraseGrid (respecting active situation if one is chosen)
   const filteredPhrases = useMemo(() => {
-    return PHRASES.filter((p) => {
-      const matchesSituation =
-        selectedSituation === 'all' || p.situation === selectedSituation;
-      if (!matchesSituation) return false;
-
-      if (!searchQuery.trim()) return true;
-
-      const q = searchQuery.toLowerCase().trim();
-      const matchScript = p.kannada.includes(q);
-      const matchRoman = p.romanized.toLowerCase().includes(q);
-      const matchEnglish = p.english.toLowerCase().includes(q);
-      const matchTip = p.tip.toLowerCase().includes(q);
-      const matchTags = p.tags.some((t) => t.toLowerCase().includes(q));
-
-      return matchScript || matchRoman || matchEnglish || matchTip || matchTags;
-    });
-  }, [selectedSituation, searchQuery]);
+    if (selectedSituation === 'all') {
+      return allCategoryMatches;
+    }
+    return allCategoryMatches.filter((p) => p.situation === selectedSituation);
+  }, [allCategoryMatches, selectedSituation]);
 
   const savedPhrasesList = useMemo(() => {
     return PHRASES.filter((p) => savedIds.includes(p.id));
@@ -371,7 +366,9 @@ export function App() {
               searchQuery={searchQuery}
               onSearchChange={(q) => {
                 setSearchQuery(q);
-                if (q) {
+                // Clear category filter so search finds phrases across all categories
+                setSelectedSituation('all');
+                if (q.trim()) {
                   setActiveTab('learn');
                 }
               }}
@@ -406,6 +403,7 @@ export function App() {
             {/* Preview Phrasebook Section (Top 6 phrases) */}
             <PhraseGrid
               phrases={filteredPhrases.slice(0, 6)}
+              totalSearchMatchesAcrossAll={allCategoryMatches.length}
               situations={SITUATIONS}
               selectedSituation={selectedSituation}
               searchQuery={searchQuery}
@@ -417,6 +415,7 @@ export function App() {
               onMarkPracticed={handleMarkPracticed}
               onClearSearch={() => setSearchQuery('')}
               onResetSituation={() => setSelectedSituation('all')}
+              onSelectSituation={(id) => setSelectedSituation(id)}
               onOpenStudio={handleOpenStudioForPhrase}
             />
 
@@ -449,6 +448,7 @@ export function App() {
             {/* Full Searchable PhraseGrid */}
             <PhraseGrid
               phrases={filteredPhrases}
+              totalSearchMatchesAcrossAll={allCategoryMatches.length}
               situations={SITUATIONS}
               selectedSituation={selectedSituation}
               searchQuery={searchQuery}
@@ -460,7 +460,9 @@ export function App() {
               onMarkPracticed={handleMarkPracticed}
               onClearSearch={() => setSearchQuery('')}
               onResetSituation={() => setSelectedSituation('all')}
+              onSelectSituation={(id) => setSelectedSituation(id)}
               onOpenStudio={handleOpenStudioForPhrase}
+              onSearchChange={(q) => setSearchQuery(q)}
             />
           </>
         )}

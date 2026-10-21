@@ -46,11 +46,11 @@ export const HeroDailyPhrase: React.FC<HeroDailyPhraseProps> = ({
   onOpenStudio,
 }) => {
   const quickSearches = [
-    { label: 'Bus Stop?', query: 'bus' },
-    { label: 'How much?', query: 'eshtu' },
-    { label: 'I need help', query: 'sahaya' },
-    { label: 'Speak slowly', query: 'nidhanavagi' },
-    { label: 'Google Pay', query: 'upi' },
+    { label: 'How much?', query: 'how much' },
+    { label: 'Where is the bus stop?', query: 'bus' },
+    { label: 'I need help', query: 'help' },
+    { label: 'Please speak slowly', query: 'slow' },
+    { label: 'Google Pay', query: 'google pay' },
   ];
 
   return (
