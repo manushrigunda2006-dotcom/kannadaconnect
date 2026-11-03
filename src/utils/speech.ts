@@ -353,16 +353,24 @@ export const startListening = (
 
 // ================= SIMILARITY & SCORING =================
 
+const normalizeForMatch = (text: string): string => {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0C80-\u0CFF]/gi, '');
+};
+
 export const calculateSpeechScore = (
   spoken: string,
   targetKannada: string,
   targetRomanized: string
 ): { score: number; feedback: string; guidanceTip: string } => {
-  const cleanSpoken = spoken.toLowerCase().trim().replace(/[^a-z0-9\u0C80-\u0CFF]/gi, '');
-  const cleanTargetKn = targetKannada.replace(/[^a-z0-9\u0C80-\u0CFF]/gi, '');
-  const cleanTargetRom = targetRomanized.toLowerCase().replace(/[^a-z0-9]/gi, '');
+  const normSpoken = normalizeForMatch(spoken);
+  const normTargetKn = normalizeForMatch(targetKannada);
+  const normTargetRom = normalizeForMatch(targetRomanized);
 
-  if (!cleanSpoken) {
+  if (!normSpoken) {
     return {
       score: 0,
       feedback: 'No input detected.',
@@ -370,8 +378,8 @@ export const calculateSpeechScore = (
     };
   }
 
-  // Exact match on Kannada script or Romanized
-  if (cleanSpoken === cleanTargetKn || cleanSpoken === cleanTargetRom) {
+  // Exact match on Kannada script or Romanized (with or without diacritics)
+  if (normSpoken === normTargetKn || normSpoken === normTargetRom) {
     return {
       score: 100,
       feedback: 'ಅದ್ಭುತ (Adbhutha) — Outstanding pronunciation!',
@@ -379,9 +387,22 @@ export const calculateSpeechScore = (
     };
   }
 
-  // Check word overlap
-  const spokenWords = spoken.toLowerCase().split(/\s+/).filter(Boolean);
-  const targetWords = `${targetKannada} ${targetRomanized}`.toLowerCase().split(/\s+/).filter(Boolean);
+  // Check word overlap with normalized tokens
+  const spokenWords = spoken
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9\u0C80-\u0CFF]/gi, ''))
+    .filter(Boolean);
+
+  const targetWords = `${targetKannada} ${targetRomanized}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9\u0C80-\u0CFF]/gi, ''))
+    .filter(Boolean);
 
   let matches = 0;
   for (const sw of spokenWords) {
