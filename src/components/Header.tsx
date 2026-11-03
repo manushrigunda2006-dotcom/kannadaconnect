@@ -157,28 +157,42 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onSelectTab('profile')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
-                  activeTab === 'profile'
+                  user.isDemo
+                    ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-950 ring-1 ring-amber-400'
+                    : activeTab === 'profile'
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800'
                 }`}
-                title="View your cloud profile"
+                title={user.isDemo ? "Judge Demo Profile Active" : "View your profile"}
               >
-                <div className="w-5 h-5 rounded-full bg-blue-900 text-amber-300 flex items-center justify-center text-[10px] font-bold">
-                  {user.displayName.charAt(0).toUpperCase()}
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  user.isDemo ? 'bg-amber-500 text-slate-950 font-black' : 'bg-blue-900 text-amber-300'
+                }`}>
+                  {user.isDemo ? '⚖️' : user.displayName.charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden sm:inline max-w-[90px] truncate">
-                  {user.displayName.split(' ')[0]}
+                <span className="hidden sm:inline max-w-[100px] truncate">
+                  {user.isDemo ? 'Judge Demo' : user.displayName.split(' ')[0]}
                 </span>
               </button>
             ) : (
-              <button
-                onClick={onOpenAuthModal}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-bold transition-all shadow-2xs"
-                title="Sign in or create account to back up progress"
-              >
-                <User className="w-3.5 h-3.5 text-blue-700" />
-                <span className="hidden sm:inline">Sign In</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={onOpenAuthModal}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
+                  title="Open Judge Demo Account login"
+                >
+                  <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>Demo Login</span>
+                </button>
+                <button
+                  onClick={onOpenAuthModal}
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  title="Sign in or create account to back up progress"
+                >
+                  <User className="w-3.5 h-3.5 text-blue-700" />
+                  <span>Sign In</span>
+                </button>
+              </div>
             )}
 
             {/* Settings */}

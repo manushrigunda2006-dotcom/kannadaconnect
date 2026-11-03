@@ -160,6 +160,8 @@ export interface UserAccount {
   displayName: string;
   createdAt?: string;
   isGuest: boolean;
+  isDemo?: boolean;
+  role?: 'judge' | 'user' | 'admin';
 }
 
 export type AuthMode = 'login' | 'signup' | 'forgot_password';

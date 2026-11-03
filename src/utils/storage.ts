@@ -251,8 +251,10 @@ export const resetPracticeProgress = (): PracticeProgress => {
   return fresh;
 };
 
+export const DEMO_SAVED_PHRASES = ['tr-01', 'tr-02', 'sh-01', 'tv-01', 'wk-01', 'hc-01'];
+
 // Judge Demo Profile Loader
-export const loadJudgeDemoProfile = (): PracticeProgress => {
+export const loadJudgeDemoProfile = (): { progress: PracticeProgress; savedIds: string[] } => {
   const today = getTodayString();
   const demoProfile: PracticeProgress = {
     practicedPhraseIds: [
@@ -299,19 +301,18 @@ export const loadJudgeDemoProfile = (): PracticeProgress => {
       { phraseId: 'tr-01', timestamp: Date.now() - 3600000, action: 'practiced' },
       { phraseId: 'sh-01', timestamp: Date.now() - 7200000, action: 'practiced' },
       { phraseId: 'wk-02', timestamp: Date.now() - 10800000, action: 'practiced' },
+      { phraseId: 'tv-01', timestamp: Date.now() - 14400000, action: 'practiced' },
     ],
   };
 
   saveProgress(demoProfile);
-  // Also bookmark 4 key phrases
-  const demoSaved = ['tr-01', 'tr-02', 'sh-01', 'tv-01'];
   try {
-    localStorage.setItem(SAVED_KEY, JSON.stringify(demoSaved));
+    localStorage.setItem(SAVED_KEY, JSON.stringify(DEMO_SAVED_PHRASES));
   } catch {
     // ignore
   }
 
-  return demoProfile;
+  return { progress: demoProfile, savedIds: DEMO_SAVED_PHRASES };
 };
 
 // ================= CUSTOM COLLECTIONS (TRIP BACKPACK) =================

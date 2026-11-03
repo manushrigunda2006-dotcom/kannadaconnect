@@ -4,6 +4,7 @@ import {
   signInWithEmail,
   signUpWithEmail,
   resetPasswordForEmail,
+  DEMO_USER,
 } from '../services/authService';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import {
@@ -15,10 +16,13 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   ArrowRight,
+  Sparkles,
+  Copy,
+  Check,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -42,8 +46,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [demoLoggingIn, setDemoLoggingIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
   const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   if (!isOpen) return null;
@@ -56,19 +62,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSuccessMessage(null);
   };
 
+  const handleCopy = (text: string, field: 'email' | 'password') => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
+
+  const handleQuickDemoLogin = async () => {
+    setEmail(DEMO_USER.email);
+    setPassword(DEMO_USER.password);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setDemoLoggingIn(true);
+
+    try {
+      const result = await signInWithEmail(DEMO_USER.email, DEMO_USER.password);
+      if (result.error) {
+        setErrorMessage(result.error);
+      } else if (result.user) {
+        onAuthSuccess(result.user, `Welcome back, ${result.user.displayName}! Preloaded evaluator profile is active.`);
+        onClose();
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to authenticate demo account.');
+    } finally {
+      setDemoLoggingIn(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
-
-    if (!configured) {
-      setErrorMessage(
-        'Supabase authentication is not yet connected. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment to enable real user accounts.'
-      );
-      setShowSetupGuide(true);
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -181,47 +208,99 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
 
         <div className="p-6">
-          {/* Setup Notice (when Supabase credentials are not configured) */}
-          {!configured && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="font-bold flex items-center justify-between">
-                    <span>Supabase Auth Setup Required</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowSetupGuide(!showSetupGuide)}
-                      className="text-[11px] underline text-amber-800 hover:text-amber-950 flex items-center gap-0.5 font-semibold"
-                    >
-                      <span>{showSetupGuide ? 'Hide Guide' : 'Setup Guide'}</span>
-                      {showSetupGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    </button>
-                  </div>
-                  <p className="mt-1 text-slate-700 leading-relaxed text-[11px]">
-                    To enable real accounts, add <code className="font-mono bg-amber-100/80 px-1 rounded">VITE_SUPABASE_URL</code> and <code className="font-mono bg-amber-100/80 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to your environment. Guest mode remains fully functional.
-                  </p>
+          {/* JUDGE DEMO ACCOUNT SECTION */}
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-amber-100/40 to-orange-50 border-2 border-amber-300 shadow-sm relative overflow-hidden">
+            {/* Header Badge */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
+                <span className="text-xs font-black uppercase tracking-wider text-amber-950 font-sans">
+                  Judge Demo Account
+                </span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300">
+                ⚡ Instant Access
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-700 leading-snug mb-3">
+              Preconfigured evaluator account with <strong>19 practiced phrases</strong>, <strong>420 XP</strong>, completed quizzes, scenarios, and sample badges.
+            </p>
+
+            {/* Demo Credentials with Copy Buttons */}
+            <div className="space-y-1.5 mb-3 font-mono text-[11px]">
+              {/* Email Row */}
+              <div className="flex items-center justify-between bg-white/95 px-2.5 py-1.5 rounded-xl border border-amber-200/90 shadow-2xs">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <span className="text-slate-400 font-sans text-[10px] font-bold uppercase shrink-0">Email:</span>
+                  <span className="text-slate-900 font-semibold truncate select-all">{DEMO_USER.email}</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(DEMO_USER.email, 'email')}
+                  className="ml-2 px-2 py-1 rounded-lg text-[10px] font-bold font-sans flex items-center gap-1 transition-all bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0 cursor-pointer"
+                  title="Copy demo email"
+                  aria-label="Copy demo email"
+                >
+                  {copiedField === 'email' ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-amber-700" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
               </div>
 
-              {/* Collapsible Step-by-Step Instructions */}
-              {showSetupGuide && (
-                <div className="mt-3 pt-3 border-t border-amber-200/80 space-y-2 text-[11px] text-slate-800">
-                  <p className="font-bold text-slate-900">3-Step Supabase Setup:</p>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-blue-700 underline font-semibold inline-flex items-center gap-0.5">supabase.com <ExternalLink className="w-2.5 h-2.5" /></a></li>
-                    <li>Go to <strong>Project Settings → API</strong> and copy your <strong>Project URL</strong> and <strong>anon public key</strong>.</li>
-                    <li>Add them to <code className="font-mono bg-white px-1 rounded border">.env.local</code> or Vercel Environment Variables:
-                      <div className="bg-slate-900 text-amber-300 font-mono p-2 rounded-lg mt-1 text-[10px] select-all">
-                        VITE_SUPABASE_URL=https://your-id.supabase.co<br />
-                        VITE_SUPABASE_ANON_KEY=your-anon-key
-                      </div>
-                    </li>
-                  </ol>
+              {/* Password Row */}
+              <div className="flex items-center justify-between bg-white/95 px-2.5 py-1.5 rounded-xl border border-amber-200/90 shadow-2xs">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <span className="text-slate-400 font-sans text-[10px] font-bold uppercase shrink-0">Pass:</span>
+                  <span className="text-slate-900 font-semibold truncate select-all">{DEMO_USER.password}</span>
                 </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() => handleCopy(DEMO_USER.password, 'password')}
+                  className="ml-2 px-2 py-1 rounded-lg text-[10px] font-bold font-sans flex items-center gap-1 transition-all bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0 cursor-pointer"
+                  title="Copy demo password"
+                  aria-label="Copy demo password"
+                >
+                  {copiedField === 'password' ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-amber-700" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* Quick Demo Login Action Button */}
+            <button
+              type="button"
+              onClick={handleQuickDemoLogin}
+              disabled={loading || demoLoggingIn}
+              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.99] text-slate-950 font-black text-xs shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {demoLoggingIn ? (
+                <div className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 fill-slate-950" />
+                  <span>Login as Demo User (1-Click Auto Fill)</span>
+                </>
+              )}
+            </button>
+          </div>
 
           {/* Feedback Messages */}
           {errorMessage && (
@@ -238,6 +317,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
+          {/* Regular Login / Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Display Name (Only in Sign Up) */}
             {mode === 'signup' && (
@@ -308,7 +388,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
                     title={showPassword ? 'Hide password' : 'Show password'}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
@@ -342,8 +422,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={loading || demoLoggingIn}
+              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -359,6 +439,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
             </button>
           </form>
+
+          {/* Optional Supabase info accordion at bottom */}
+          {!configured && (
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowSetupGuide(!showSetupGuide)}
+                className="w-full flex items-center justify-between text-[11px] text-slate-500 hover:text-slate-800 font-medium py-1"
+              >
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Optional Cloud Sync (Supabase)</span>
+                </span>
+                {showSetupGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+
+              {showSetupGuide && (
+                <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[10px] text-slate-600 space-y-1">
+                  <p>
+                    The Judge Demo Account and local registration work out of the box. For cross-browser Supabase sync, set <code className="font-mono bg-white px-1 border rounded">VITE_SUPABASE_URL</code> and <code className="font-mono bg-white px-1 border rounded">VITE_SUPABASE_ANON_KEY</code>.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Bottom Navigation between modes */}
           <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-3 text-xs text-slate-600">
@@ -398,7 +503,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="mt-1 text-slate-500 hover:text-slate-800 text-[11px] font-medium flex items-center gap-1"
+              className="mt-1 text-slate-500 hover:text-slate-800 text-[11px] font-medium flex items-center gap-1 cursor-pointer"
             >
               <span>Continue as Guest (No account needed)</span>
             </button>

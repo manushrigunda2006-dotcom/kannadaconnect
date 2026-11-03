@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   MessageSquare,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 
 interface ProfilePageProps {
@@ -121,6 +122,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 animate-fadeIn">
+      {/* Official Judge Evaluation Alert Banner */}
+      {user?.isDemo && (
+        <div className="mb-6 p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-orange-500/15 border-2 border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-xl shrink-0 shadow-xs border border-amber-500/30">
+              ⚖️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-black text-slate-900">
+                  Hackathon Evaluation Session Active
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                  Full Access
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Preloaded with <strong>19 practiced phrases</strong>, <strong>420 XP</strong>, <strong>3 completed scenarios</strong>, <strong>5 badges</strong>, and <strong>2 custom collections</strong>. All features are fully unlocked without payment or registration.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-mono font-bold px-3 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-300">
+              🛡️ Demo Data Safeguard: Active
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner Card: Profile Overview */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md p-6 sm:p-8 mb-8 relative overflow-hidden">
         {/* Background Decorative Gradient */}
@@ -130,7 +160,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <div className="flex items-start sm:items-center gap-4">
             {/* Avatar Pill */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-900 to-indigo-800 text-amber-300 flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-md border-2 border-amber-300/40 shrink-0">
-              {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'ಕ'}
+              {user?.isDemo ? '⚖️' : user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'ಕ'}
             </div>
 
             <div>
@@ -149,7 +179,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <button
                       onClick={handleSaveName}
                       disabled={isSavingName}
-                      className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                      className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-xs cursor-pointer"
                       title="Save name"
                     >
                       <Check className="w-4 h-4" />
@@ -160,7 +190,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                         setNameInput(user?.displayName || '');
                         setNameError(null);
                       }}
-                      className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100"
+                      className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
                       title="Cancel"
                     >
                       <X className="w-4 h-4" />
@@ -171,17 +201,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-sans">
                       {user?.displayName || 'Guest Learner'}
                     </h1>
-                    <button
-                      onClick={() => {
-                        setNameInput(user?.displayName || '');
-                        setIsEditingName(true);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit display name"
-                      aria-label="Edit display name"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
+                    {!user?.isDemo && (
+                      <button
+                        onClick={() => {
+                          setNameInput(user?.displayName || '');
+                          setIsEditingName(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Edit display name"
+                        aria-label="Edit display name"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -198,7 +230,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
               {/* Status Badges */}
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                {isGuest ? (
+                {user?.isDemo ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+                    <Sparkles className="w-3 h-3 text-amber-600 fill-amber-500" />
+                    Verified Judge Account (Demo)
+                  </span>
+                ) : isGuest ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                     <CloudOff className="w-3 h-3 text-amber-700" />
                     Guest Mode (Local Storage Only)

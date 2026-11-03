@@ -8,6 +8,37 @@
 
 ---
 
+---
+
+## ⚖️ Hackathon Judge Demo Account (Instant Evaluator Access)
+
+For evaluation and judging, KannadaConnect includes a **preconfigured, fully functional Demo Account** accessible immediately on the live production deployment and any incognito browser window without requiring manual registration or setup:
+
+| Field | Demo Credential | Action |
+|---|---|---|
+| **Email** | `judge@kannadaconnect.demo` | *Click "Copy" button in login modal or paste* |
+| **Password** | `KannadaDemo@2026` | *Click "Copy" button in login modal or paste* |
+| **1-Click Quick Access** | Tap **"⚡ Demo Login"** in the top header, then click **"Login as Demo User (1-Click Auto Fill)"** |
+
+### ✨ What's Preloaded in the Judge Demo Account:
+- **19 Practiced Everyday Phrases:** Spread across all 6 situations (Transport, Shopping, Travel, Healthcare, Education, and Workplace).
+- **Active 4-Day Learning Streak & 420 XP Points:** Demonstrating habit-building mechanics.
+- **3 Completed Conversation Role-Plays:** Auto ride negotiation, Gandhi Bazaar bargaining, and BMTC bus ticketing.
+- **Quiz Performance Record:** 15 attempted, 13 correct answers (87% accuracy).
+- **5 Unlocked Achievement Badges:**
+  - 🥇 *First Wordsmith* (First Kannada phrase practiced)
+  - 🛺 *Auto Raja* (Mastered 5 transit phrases)
+  - 💬 *Dialogue Champ* (Completed real-life scenario)
+  - 🏆 *Quiz Wizard* (80%+ quiz score)
+  - 🔥 *Consistency Champion* (Maintained daily streak)
+- **2 Custom Trip Backpack Collections:** *"Indiranagar Metro & Market Weekend"* and *"Office Tea Breaks & Greetings"*.
+
+### 🛡️ Demo Safeguards & Security Architecture:
+- **Instant Unrestricted Access:** Judges can test every single feature (mic pronunciation, conversation simulator, quizzes, pocketbook, backpack, profile) without paywalls or sign-up barriers.
+- **Destructive Action Protection:** To safeguard the evaluation experience, demo account core baseline data cannot be wiped by accident. Judges can revert to the pristine sample baseline anytime via Settings.
+- **Verified Authentication:** Authentication genuinely validates credentials (`judge@kannadaconnect.demo` with password `KannadaDemo@2026`). Incorrect passwords are rejected.
+- **Security Compliance:** Zero database passwords, service role keys, or privileged credentials are exposed in frontend code. Public client keys only.
+
 ## 🌟 1. Project Overview
 
 **KannadaConnect** is a practical, situation-first Kannada communication platform engineered specifically for non-native speakers living, working, and studying in Karnataka.

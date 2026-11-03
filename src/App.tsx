@@ -76,12 +76,18 @@ export function App() {
     getCurrentUser().then(async (activeUser) => {
       if (activeUser) {
         setUser(activeUser);
-        try {
-          const merged = await syncAndMergeOnLogin(activeUser.id);
-          setProgress(merged.progress);
-          setSavedIds(merged.savedIds);
-        } catch (e) {
-          console.warn('Initial session sync notice:', e);
+        if (activeUser.isDemo) {
+          const { progress: demo, savedIds: demoSaved } = loadJudgeDemoProfile();
+          setProgress(demo);
+          setSavedIds(demoSaved);
+        } else {
+          try {
+            const merged = await syncAndMergeOnLogin(activeUser.id);
+            setProgress(merged.progress);
+            setSavedIds(merged.savedIds);
+          } catch (e) {
+            console.warn('Initial session sync notice:', e);
+          }
         }
       }
     });
@@ -89,6 +95,11 @@ export function App() {
     const unsubscribe = onAuthStateChange(async (updatedUser) => {
       if (updatedUser) {
         setUser(updatedUser);
+        if (updatedUser.isDemo) {
+          const { progress: demo, savedIds: demoSaved } = loadJudgeDemoProfile();
+          setProgress(demo);
+          setSavedIds(demoSaved);
+        }
       } else {
         setUser({
           id: 'guest',
@@ -330,6 +341,26 @@ export function App() {
     setUser(authedUser);
     showToast('Signed In Successfully', message, 'success');
 
+    if (authedUser.isDemo) {
+      const { progress: demo, savedIds: demoSaved } = loadJudgeDemoProfile();
+      setProgress(demo);
+      setSavedIds(demoSaved);
+      if (!settings.reducedMotion) {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.5 },
+          colors: ['#f59e0b', '#3b82f6', '#10b981'],
+        });
+      }
+      showToast(
+        '🌟 Judge Evaluation Mode Ready',
+        'Preloaded learning history, 420 XP, completed quizzes, and unlocked badges are active.',
+        'success'
+      );
+      return;
+    }
+
     // Automatically merge guest data into this account without duplicates
     try {
       const merged = await syncAndMergeOnLogin(authedUser.id);
@@ -387,9 +418,9 @@ export function App() {
   };
 
   const handleLoadJudgeDemo = () => {
-    const demo = loadJudgeDemoProfile();
+    const { progress: demo, savedIds: demoSaved } = loadJudgeDemoProfile();
     setProgress(demo);
-    setSavedIds(getSavedPhraseIds());
+    setSavedIds(demoSaved);
     if (!settings.reducedMotion) {
       confetti({
         particleCount: 80,
@@ -406,12 +437,20 @@ export function App() {
   };
 
   const handleResetProgress = () => {
+    if (user.isDemo) {
+      handleLoadJudgeDemo();
+      return;
+    }
     const fresh = resetPracticeProgress();
     setProgress(fresh);
     showToast('Progress Reset', 'Practice progress reset to 0.', 'info');
   };
 
   const handleResetAllData = () => {
+    if (user.isDemo) {
+      handleLoadJudgeDemo();
+      return;
+    }
     clearSavedPhrases();
     setSavedIds([]);
     const fresh = resetPracticeProgress();
@@ -703,6 +742,7 @@ export function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
+        isDemoUser={Boolean(user?.isDemo)}
         onUpdateSettings={handleUpdateSettings}
         onResetAllData={handleResetAllData}
         onLoadJudgeDemo={handleLoadJudgeDemo}
