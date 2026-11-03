@@ -127,8 +127,29 @@ export const stopSpeech = () => {
   }
 };
 
-// ================= SPEECH RECOGNITION (STT) =================
+// ================= SPEECH RECOGNITION (STT) & PERMISSIONS =================
 
+export type SpeechRecognitionErrorType =
+  | 'permission_denied'
+  | 'microphone_unavailable'
+  | 'unsupported_browser'
+  | 'no_speech'
+  | 'network_error'
+  | 'service_not_allowed'
+  | 'aborted'
+  | 'generic';
+
+export interface SpeechRecognitionErrorDetails {
+  type: SpeechRecognitionErrorType;
+  message: string;
+  rawCode?: string;
+}
+
+export type MicrophonePermissionState = 'granted' | 'denied' | 'prompt' | 'unsupported';
+
+/**
+ * Checks if the current browser environment supports the Web Speech Recognition API.
+ */
 export const isSpeechRecognitionSupported = (): boolean => {
   if (typeof window === 'undefined') return false;
   return Boolean(
@@ -139,20 +160,93 @@ export const isSpeechRecognitionSupported = (): boolean => {
   );
 };
 
+/**
+ * Queries the current microphone permission status if supported by the browser.
+ */
+export const getMicrophonePermissionState = async (): Promise<MicrophonePermissionState> => {
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) {
+    return 'prompt';
+  }
+  try {
+    const status = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    return status.state as MicrophonePermissionState;
+  } catch {
+    return 'prompt';
+  }
+};
+
+/**
+ * Requests microphone permission explicitly via getUserMedia and immediately stops tracks.
+ * Used for testing/probing permissions without leaving the microphone open.
+ */
+export const requestMicrophoneAccess = async (): Promise<{
+  success: boolean;
+  errorType?: SpeechRecognitionErrorType;
+  message?: string;
+}> => {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+    return {
+      success: false,
+      errorType: 'unsupported_browser',
+      message: 'Your browser does not support audio recording APIs.',
+    };
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Immediately stop all audio tracks so the recording indicator turns off
+    stream.getTracks().forEach((track) => {
+      try {
+        track.stop();
+      } catch {}
+    });
+    return { success: true };
+  } catch (err: any) {
+    const name = err?.name || '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return {
+        success: false,
+        errorType: 'permission_denied',
+        message: 'Microphone permission was denied by your browser.',
+      };
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return {
+        success: false,
+        errorType: 'microphone_unavailable',
+        message: 'No microphone was detected on your device. Please connect a mic or headset.',
+      };
+    }
+    return {
+      success: false,
+      errorType: 'generic',
+      message: err?.message || 'Unable to access microphone.',
+    };
+  }
+};
+
 export interface RecognitionSession {
   stop: () => void;
+  abort?: () => void;
+}
+
+export interface StartListeningCallbacks {
+  onResult: (transcript: string, isFinal: boolean) => void;
+  onError: (error: SpeechRecognitionErrorDetails) => void;
+  onEnd: () => void;
+  onStart?: () => void;
 }
 
 export const startListening = (
-  callbacks: {
-    onResult: (transcript: string, isFinal: boolean) => void;
-    onError: (error: string) => void;
-    onEnd: () => void;
-  },
+  callbacks: StartListeningCallbacks,
   lang = 'kn-IN'
 ): RecognitionSession | null => {
   if (!isSpeechRecognitionSupported()) {
-    callbacks.onError('Web Speech Recognition API is not supported in this browser.');
+    callbacks.onError({
+      type: 'unsupported_browser',
+      message: 'Web Speech Recognition API is not supported in this browser. Please use Chrome or Edge.',
+      rawCode: 'unsupported',
+    });
     return null;
   }
 
@@ -168,6 +262,12 @@ export const startListening = (
     recognition.continuous = false;
     recognition.maxAlternatives = 1;
 
+    let stoppedManually = false;
+
+    recognition.onstart = () => {
+      callbacks.onStart?.();
+    };
+
     recognition.onresult = (event: any) => {
       let interim = '';
       let final = '';
@@ -182,7 +282,44 @@ export const startListening = (
     };
 
     recognition.onerror = (event: any) => {
-      callbacks.onError(event.error || 'Speech recognition encountered an issue.');
+      const code = event.error || '';
+      if (code === 'aborted' && stoppedManually) {
+        return;
+      }
+
+      let type: SpeechRecognitionErrorType = 'generic';
+      let message = 'Speech recognition encountered an unexpected issue.';
+
+      switch (code) {
+        case 'not-allowed':
+          type = 'permission_denied';
+          message = 'Microphone permission was denied. Please allow microphone access to practice speaking.';
+          break;
+        case 'audio-capture':
+          type = 'microphone_unavailable';
+          message = 'No microphone was detected on your device. Please plug in a microphone or headset.';
+          break;
+        case 'no-speech':
+          type = 'no_speech';
+          message = 'No speech was detected. Please speak closer to your microphone and try again.';
+          break;
+        case 'network':
+          type = 'network_error';
+          message = 'Network connection issue with browser speech recognition service.';
+          break;
+        case 'service-not-allowed':
+          type = 'service_not_allowed';
+          message = 'Speech recognition service is disabled or blocked in your operating system.';
+          break;
+        case 'aborted':
+          type = 'aborted';
+          message = 'Listening was cancelled.';
+          break;
+        default:
+          message = `Recognition status: ${code}`;
+      }
+
+      callbacks.onError({ type, message, rawCode: code });
     };
 
     recognition.onend = () => {
@@ -193,20 +330,29 @@ export const startListening = (
 
     return {
       stop: () => {
+        stoppedManually = true;
         try {
           recognition.stop();
-        } catch {
-          // ignore
-        }
+        } catch {}
+      },
+      abort: () => {
+        stoppedManually = true;
+        try {
+          recognition.abort();
+        } catch {}
       },
     };
   } catch (err: any) {
-    callbacks.onError(err.message || 'Could not start microphone session.');
+    callbacks.onError({
+      type: 'generic',
+      message: err.message || 'Could not start microphone session.',
+    });
     return null;
   }
 };
 
-// Simple text similarity helper
+// ================= SIMILARITY & SCORING =================
+
 export const calculateSpeechScore = (
   spoken: string,
   targetKannada: string,
@@ -219,17 +365,17 @@ export const calculateSpeechScore = (
   if (!cleanSpoken) {
     return {
       score: 0,
-      feedback: 'No speech detected.',
-      guidanceTip: 'Speak into your microphone clearly at a moderate volume.',
+      feedback: 'No input detected.',
+      guidanceTip: 'Speak or type the phrase clearly to receive phonetic feedback.',
     };
   }
 
-  // Exact or subset match on Kannada script or Romanized
+  // Exact match on Kannada script or Romanized
   if (cleanSpoken === cleanTargetKn || cleanSpoken === cleanTargetRom) {
     return {
       score: 100,
       feedback: 'ಅದ್ಭುತ (Adbhutha) — Outstanding pronunciation!',
-      guidanceTip: 'Your spoken phrase matches the native target perfectly. Ready for the street!',
+      guidanceTip: 'Your phrase matches the native target perfectly. Ready for the street!',
     };
   }
 
@@ -256,7 +402,7 @@ export const calculateSpeechScore = (
   } else if (estimatedScore >= 40) {
     return {
       score: Math.max(45, estimatedScore),
-      feedback: 'Good effort, keep practising!',
+      feedback: 'Good effort, keep practicing!',
       guidanceTip: 'Listen to the audio once more at 0.7x learner speed, then repeat syllable by syllable.',
     };
   } else {
